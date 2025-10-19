@@ -6,13 +6,16 @@ const { promisify } = require('util');
 const app = express();
 const PORT = 5000;
 
-// Get system chromium path
-async function getChromiumPath() {
-    try {
-        const { stdout } = await promisify(exec)('which chromium');
-        return stdout.trim();
-    } catch (error) {
-        console.error('Chromium not found, using default');
+// Get Chrome path for Puppeteer
+function getChromePath() {
+    // On Windows, Puppeteer installs Chrome in the user's cache directory
+    const os = require('os');
+    const path = require('path');
+    
+    if (process.platform === 'win32') {
+        return path.join(os.homedir(), '.cache', 'puppeteer', 'chrome', 'win64-141.0.7390.78', 'chrome-win64', 'chrome.exe');
+    } else {
+        // For other platforms, try to find chromium
         return null;
     }
 }
@@ -22,7 +25,7 @@ async function scrapeVideos(limit = 20) {
     let browser;
     
     try {
-        const chromiumPath = await getChromiumPath();
+        const chromePath = getChromePath();
         const launchOptions = {
             headless: true,
             args: [
@@ -36,8 +39,11 @@ async function scrapeVideos(limit = 20) {
             ]
         };
         
-        if (chromiumPath) {
-            launchOptions.executablePath = chromiumPath;
+        if (chromePath) {
+            launchOptions.executablePath = chromePath;
+            console.log('Using Chrome at:', chromePath);
+        } else {
+            console.log('Using default Puppeteer Chrome');
         }
         
         browser = await puppeteer.launch(launchOptions);
