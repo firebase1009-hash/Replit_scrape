@@ -4,19 +4,27 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // Get Chrome path for Puppeteer
 function getChromePath() {
-    // On Windows, Puppeteer installs Chrome in the user's cache directory
     const os = require('os');
     const path = require('path');
     
     if (process.platform === 'win32') {
+        // Windows local development
         return path.join(os.homedir(), '.cache', 'puppeteer', 'chrome', 'win64-141.0.7390.78', 'chrome-win64', 'chrome.exe');
     } else {
-        // For other platforms, try to find chromium
-        return null;
+        // Linux/Unix (Vercel, etc.) - let Puppeteer handle the path automatically
+        // or try to find the installed Chrome
+        try {
+            const { execSync } = require('child_process');
+            const chromePath = execSync('which google-chrome-stable || which google-chrome || which chromium-browser || which chromium', { encoding: 'utf8' }).trim();
+            return chromePath;
+        } catch (error) {
+            // Let Puppeteer use its bundled Chrome
+            return null;
+        }
     }
 }
 
@@ -35,7 +43,10 @@ async function scrapeVideos(limit = 20) {
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
-                '--disable-gpu'
+                '--disable-gpu',
+                '--disable-web-security',
+                '--disable-features=VizDisplayCompositor',
+                '--single-process'
             ]
         };
         
@@ -190,7 +201,13 @@ app.get('/', (req, res) => {
     });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Video Scraper API running on port ${PORT}`);
-    console.log(`Usage: /api/scrape?limit=20`);
-});
+// Only start server if not in Vercel environment
+if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`Video Scraper API running on port ${PORT}`);
+        console.log(`Usage: /api/scrape?limit=20`);
+    });
+}
+
+// Export for Vercel
+module.exports = app;

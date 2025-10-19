@@ -1,16 +1,21 @@
 {
-  "name": "workspace",
+  "name": "video-scraper-api",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["puppeteer", "scraping", "api", "videos"],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Video scraping API using Puppeteer",
   "dependencies": {
     "express": "^5.1.0",
     "puppeteer": "^24.25.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
